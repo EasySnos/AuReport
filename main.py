@@ -1,5 +1,6 @@
 import re
 import logging
+import time
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from aiogram.utils import executor
@@ -13,6 +14,10 @@ bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
 user_data = {}
+user_limits = {}
+
+LIMIT = 5
+TIME_WINDOW = 3600  # 1 час
 
 # --- Кнопки ---
 reasons_kb = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -42,6 +47,29 @@ confirm_kb.add(KeyboardButton("Confirm"), KeyboardButton("Start Again"))
 def is_valid_link(text):
     return re.match(r"^(https?://)?t\.me/.+", text)
 
+# --- Проверка лимита ---
+def check_limit(user_id):
+    now = time.time()
+
+    if user_id not in user_limits:
+        user_limits[user_id] = []
+
+    # оставляем только последние 60 минут
+    user_limits[user_id] = [
+        t for t in user_limits[user_id]
+        if now - t < TIME_WINDOW
+    ]
+
+    if len(user_limits[user_id]) >= LIMIT:
+        oldest = user_limits[user_id][0]
+        wait_time = int(TIME_WINDOW - (now - oldest))
+
+        minutes = wait_time // 60
+
+        return False, minutes
+
+    return True, None
+
 # --- START ---
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
@@ -55,6 +83,15 @@ async def start(message: types.Message):
 # --- Получение ссылки ---
 @dp.message_handler(lambda message: 'link' not in user_data.get(message.from_user.id, {}))
 async def get_link(message: types.Message):
+
+    allowed, minutes = check_limit(message.from_user.id)
+
+    if not allowed:
+        await message.answer(
+            f"Too many requests, please wait a little longer ({minutes}m)."
+        )
+        return
+
     if not message.text or not is_valid_link(message.text):
         await message.answer("Please enter a valid link to the content you want to report.")
         return
@@ -109,13 +146,11 @@ async def get_docs(message: types.Message):
 # --- Подтверждение ---
 @dp.message_handler(lambda message: message.text in ["Confirm", "Start Again"])
 async def final_step(message: types.Message):
+
     if message.text == "Start Again":
         user_data[message.from_user.id] = {}
 
-    # Убираем клавиатуру
         await message.answer("Restarting...", reply_markup=ReplyKeyboardRemove())
-
-    # Запускаем заново
         await start(message)
         return
 
@@ -132,10 +167,17 @@ async def final_step(message: types.Message):
         f"Доказательства: {data.get('docs')}"
     )
 
-    await bot.send_message(CHANNEL_ID, text)
+    try:
+        await bot.send_message(CHANNEL_ID, text)
 
-    if data.get("photo_id"):
-        await bot.send_photo(CHANNEL_ID, data["photo_id"])
+        if data.get("photo_id"):
+            await bot.send_photo(CHANNEL_ID, data["photo_id"])
+
+    except Exception as e:
+        print("Ошибка отправки в канал:", e)
+
+    # 👉 фиксируем жалобу (учёт лимита)
+    user_limits.setdefault(message.from_user.id, []).append(time.time())
 
     await message.answer(
         "Thank you for your report!\n\n"
