@@ -1,23 +1,25 @@
 import re
 import logging
-import time
+import datetime
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from aiogram.utils import executor
+from functools import wraps
 
 API_TOKEN = "8747503624:AAGkCWH0rtrZ-87y4vIGvJohi6n7PE2Y8lA"
 CHANNEL_ID = "-1003843717383"
 
+# --- Белый список пользователей ---
+ALLOWED_USERS = [8666734115, 7479868225]  # замените на реальные ID
+
+# --- Настройка логирования ---
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
 user_data = {}
-user_limits = {}
-
-LIMIT = 5
-TIME_WINDOW = 3600  # 1 час
+user_limits = {}  # для лимита жалоб
 
 # --- Кнопки ---
 reasons_kb = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -47,31 +49,37 @@ confirm_kb.add(KeyboardButton("Confirm"), KeyboardButton("Start Again"))
 def is_valid_link(text):
     return re.match(r"^(https?://)?t\.me/.+", text)
 
-# --- Проверка лимита ---
-def check_limit(user_id):
-    now = time.time()
+# --- Декоратор для доступа по белому списку ---
+def only_allowed(func):
+    @wraps(func)
+    async def wrapper(message: types.Message, *args, **kwargs):
+        if message.from_user.id not in ALLOWED_USERS:
+            await message.answer(
+                "You don't have access to the bot, you can get it here - @id8666734115",
+                reply_markup=ReplyKeyboardRemove()
+            )
+            return
+        return await func(message, *args, **kwargs)
+    return wrapper
 
+# --- Проверка лимита ---
+def can_send(user_id):
+    now = datetime.datetime.now()
     if user_id not in user_limits:
         user_limits[user_id] = []
+    # Убираем жалобы старше часа
+    user_limits[user_id] = [t for t in user_limits[user_id] if (now - t).seconds < 3600]
+    if len(user_limits[user_id]) >= 5:
+        next_available = 60 - int((now - user_limits[user_id][0]).seconds / 60)
+        return False, next_available
+    return True, 0
 
-    # оставляем только последние 60 минут
-    user_limits[user_id] = [
-        t for t in user_limits[user_id]
-        if now - t < TIME_WINDOW
-    ]
-
-    if len(user_limits[user_id]) >= LIMIT:
-        oldest = user_limits[user_id][0]
-        wait_time = int(TIME_WINDOW - (now - oldest))
-
-        minutes = wait_time // 60
-
-        return False, minutes
-
-    return True, None
+def record_sent(user_id):
+    user_limits[user_id].append(datetime.datetime.now())
 
 # --- START ---
 @dp.message_handler(commands=['start'])
+@only_allowed
 async def start(message: types.Message):
     user_data[message.from_user.id] = {}
     await message.answer(
@@ -82,14 +90,11 @@ async def start(message: types.Message):
 
 # --- Получение ссылки ---
 @dp.message_handler(lambda message: 'link' not in user_data.get(message.from_user.id, {}))
+@only_allowed
 async def get_link(message: types.Message):
-
-    allowed, minutes = check_limit(message.from_user.id)
-
-    if not allowed:
-        await message.answer(
-            f"Too many requests, please wait a little longer ({minutes}m)."
-        )
+    can_send_flag, wait_minutes = can_send(message.from_user.id)
+    if not can_send_flag:
+        await message.answer(f"Too many requests, please wait {wait_minutes}m before sending a new report.")
         return
 
     if not message.text or not is_valid_link(message.text):
@@ -101,6 +106,7 @@ async def get_link(message: types.Message):
 
 # --- Причина ---
 @dp.message_handler(lambda message: 'reason' not in user_data.get(message.from_user.id, {}) and message.text in reasons)
+@only_allowed
 async def get_reason(message: types.Message):
     user_data[message.from_user.id]['reason'] = message.text
 
@@ -111,6 +117,7 @@ async def get_reason(message: types.Message):
 
 # --- Описание ---
 @dp.message_handler(lambda message: 'reason' in user_data.get(message.from_user.id, {}) and 'description' not in user_data.get(message.from_user.id, {}))
+@only_allowed
 async def get_description(message: types.Message):
     user_data[message.from_user.id]['description'] = message.text
 
@@ -124,6 +131,7 @@ async def get_description(message: types.Message):
     lambda message: 'description' in user_data.get(message.from_user.id, {}) and 'docs' not in user_data.get(message.from_user.id, {}),
     content_types=['photo', 'text']
 )
+@only_allowed
 async def get_docs(message: types.Message):
     data = user_data.get(message.from_user.id)
 
@@ -145,16 +153,16 @@ async def get_docs(message: types.Message):
 
 # --- Подтверждение ---
 @dp.message_handler(lambda message: message.text in ["Confirm", "Start Again"])
+@only_allowed
 async def final_step(message: types.Message):
-
     if message.text == "Start Again":
         user_data[message.from_user.id] = {}
-
         await message.answer("Restarting...", reply_markup=ReplyKeyboardRemove())
         await start(message)
         return
 
     data = user_data.get(message.from_user.id)
+    record_sent(message.from_user.id)  # сохраняем факт отправки
 
     username = f"@{message.from_user.username}" if message.from_user.username else "Нет username"
 
@@ -167,17 +175,10 @@ async def final_step(message: types.Message):
         f"Доказательства: {data.get('docs')}"
     )
 
-    try:
-        await bot.send_message(CHANNEL_ID, text)
+    await bot.send_message(CHANNEL_ID, text)
 
-        if data.get("photo_id"):
-            await bot.send_photo(CHANNEL_ID, data["photo_id"])
-
-    except Exception as e:
-        print("Ошибка отправки в канал:", e)
-
-    # 👉 фиксируем жалобу (учёт лимита)
-    user_limits.setdefault(message.from_user.id, []).append(time.time())
+    if data.get("photo_id"):
+        await bot.send_photo(CHANNEL_ID, data["photo_id"])
 
     await message.answer(
         "Thank you for your report!\n\n"
