@@ -171,6 +171,7 @@ async def final_step(message: types.Message):
         f"Айди пользователя: {message.from_user.id}\n"
         f"Юз пользователя: {username}\n"
         f"Текст: {data.get('description')}\n"
+        f"Причина: {reason}\n
         f"Ссылка: {data.get('link')}\n"
         f"Доказательства: {data.get('docs')}"
     )
