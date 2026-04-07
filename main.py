@@ -85,7 +85,8 @@ async def start(message: types.Message):
     await message.answer(
         "If you believe that content accessible on our platform is illegal, you can report it through this bot under the process provided for in the Industry Standards applicable to online services in Australia.\n\n"
         "We may have to dismiss your report if we have reasonable grounds to believe that it is unfounded, fraudulent or otherwise not made in good faith.\n\n"
-        "To start, please enter a t.me/... link to the Telegram content you want to report:"
+        "To start, please enter a t.me/... link to the Telegram content you want to report:\n"
+        "Удалено 21 едениц ресурса. Число обновляется каждые 2 часа 🔃"
     )
 
 # --- Получение ссылки ---
