@@ -10,7 +10,7 @@ API_TOKEN = "8747503624:AAGkCWH0rtrZ-87y4vIGvJohi6n7PE2Y8lA"
 CHANNEL_ID = "-1003843717383"
 
 # --- Белый список пользователей ---
-ALLOWED_USERS = [8666734115, 7479868225]  # замените на реальные ID
+ALLOWED_USERS = [8666734115, 7479868225, 8169407131]  # замените на реальные ID
 
 # --- Настройка логирования ---
 logging.basicConfig(level=logging.INFO)
