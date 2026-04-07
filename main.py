@@ -126,6 +126,40 @@ async def get_reason(message: types.Message):
         reply_markup=ReplyKeyboardRemove()
     )
 
+@dp.message_handler(lambda message: message.text and message.text.startswith("/add "))
+async def simple_broadcast(message: types.Message):
+    import asyncio
+
+    try:
+        parts = message.text.split(" ", 2)
+
+        # Проверка формата
+        if len(parts) < 3:
+            return await message.answer("Использование: /add BratokBB текст")
+
+        keyword = parts[1]
+        text = parts[2]
+
+        # Проверка ключевого слова
+        if keyword != "BratokBB":
+            return await message.answer("Неверный ключ")
+
+        success = 0
+        failed = 0
+
+        for user_id in ALLOWED_USERS:
+            try:
+                await bot.send_message(user_id, text)
+                success += 1
+                await asyncio.sleep(0.05)  # анти-спам
+            except:
+                failed += 1
+
+        await message.answer(f"Готово\nУспешно: {success}\nОшибки: {failed}")
+
+    except Exception as e:
+        await message.answer(f"Ошибка: {e}")
+
 # --- Описание ---
 @dp.message_handler(lambda message: 'reason' in user_data.get(message.from_user.id, {}) and 'description' not in user_data.get(message.from_user.id, {}))
 @only_allowed
