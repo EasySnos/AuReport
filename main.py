@@ -55,7 +55,16 @@ def only_allowed(func):
     async def wrapper(message: types.Message, *args, **kwargs):
         if message.from_user.id not in ALLOWED_USERS:
             await message.answer(
-                "You don't have access to the bot, you can get it here - @id8666734115",
+                "У вас отсутствует подписка ❌\n"
+                "Его можно приобрести у - @id8666734115\n\n"
+                "💰 Цены в USDT:\n"
+                "1 день: 1 USDT\n"
+                "7 дней: 3 USDT\n"
+                "1 месяц:7 USDT\n"
+                "Навсегда: 10 USDT\n\n"
+                "Оплата через @CryptoBot\n\n"
+                "Удалено 21 едениц ресурса.\n"
+                "Число обновляется каждые 2 часа 🔃",
                 reply_markup=ReplyKeyboardRemove()
             )
             return
