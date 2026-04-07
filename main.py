@@ -63,7 +63,6 @@ def only_allowed(func):
                 "1 месяц:7 USDT\n"
                 "Навсегда: 10 USDT\n\n"
                 "Оплата через @CryptoBot"
-                
                 reply_markup=ReplyKeyboardRemove()
             )
             return
