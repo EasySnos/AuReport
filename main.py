@@ -10,7 +10,7 @@ API_TOKEN = "8747503624:AAGkCWH0rtrZ-87y4vIGvJohi6n7PE2Y8lA"
 CHANNEL_ID = "-1003843717383"
 
 # --- Белый список пользователей ---
-ALLOWED_USERS = [8666734115, 7479868225]  # замените на реальные ID
+ALLOWED_USERS = [8666734115, 7479868225, 8475341264]  # замените на реальные ID
 
 # --- Настройка логирования ---
 logging.basicConfig(level=logging.INFO)
@@ -92,7 +92,7 @@ def record_sent(user_id):
 async def start(message: types.Message):
     user_data[message.from_user.id] = {}
     await message.answer(
-        "If you believe that content accessible on our platform is illegal, you can report it through this bot under the process provided for in the Industry Standards applicable to online services in Australia.\n\n"
+        "If you believe that content accessible on our platform is illegal, you can report it through this bot under the process provided for in the Industry Standards applicable to online services in Telegram.\n\n"
         "We may have to dismiss your report if we have reasonable grounds to believe that it is unfounded, fraudulent or otherwise not made in good faith.\n\n"
         "To start, please enter a t.me/... link to the Telegram content you want to report:\n\n"
         "Удалено 30 едениц ресурса.\n"
