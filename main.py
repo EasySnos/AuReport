@@ -63,7 +63,7 @@ def only_allowed(func):
                 "1 месяц:7 USDT\n"
                 "Навсегда: 10 USDT\n\n"
                 "Оплата через @CryptoBot\n\n"
-                "Удалено 30 едениц ресурса.\n"
+                "Удалено 32 едениц ресурса.\n"
                 "Число обновляется каждые 2 часа 🔃",
                 reply_markup=ReplyKeyboardRemove()
             )
@@ -95,7 +95,7 @@ async def start(message: types.Message):
         "If you believe that content accessible on our platform is illegal, you can report it through this bot under the process provided for in the Industry Standards applicable to online services in Telegram.\n\n"
         "We may have to dismiss your report if we have reasonable grounds to believe that it is unfounded, fraudulent or otherwise not made in good faith.\n\n"
         "To start, please enter a t.me/... link to the Telegram content you want to report:\n\n"
-        "Удалено 30 едениц ресурса.\n"
+        "Удалено 32 едениц ресурса.\n"
         "Число обновляется каждые 2 часа 🔃"
     )
 
