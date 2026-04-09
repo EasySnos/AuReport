@@ -131,18 +131,33 @@ async def simple_broadcast(message: types.Message):
     import asyncio
 
     try:
-        parts = message.text.split(" ", 2)
+        parts = message.text.split(" ", 3)
 
-        # Проверка формата
+        # Проверка минимального количества аргументов
         if len(parts) < 3:
-            return await message.answer("Использование: /add BratokBB текст")
+            return await message.answer("Использование:\n/add BratokBB текст\n/add BratokBB id текст")
 
         keyword = parts[1]
-        text = parts[2]
 
-        # Проверка ключевого слова
+        # Проверка ключа
         if keyword != "BratokBB":
             return await message.answer("Неверный ключ")
+
+        # --- Если указали ID ---
+        if len(parts) >= 4 and parts[2].isdigit():
+            target_id = int(parts[2])
+            text = parts[3]
+
+            try:
+                await bot.send_message(target_id, text)
+                await message.answer(f"Сообщение отправлено пользователю {target_id}")
+            except Exception as e:
+                await message.answer(f"Ошибка отправки: {e}")
+
+            return
+
+        # --- Иначе рассылка всем ---
+        text = message.text.split(" ", 2)[2]
 
         success = 0
         failed = 0
@@ -151,7 +166,7 @@ async def simple_broadcast(message: types.Message):
             try:
                 await bot.send_message(user_id, text)
                 success += 1
-                await asyncio.sleep(0.05)  # анти-спам
+                await asyncio.sleep(0.05)
             except:
                 failed += 1
 
