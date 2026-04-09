@@ -133,30 +133,31 @@ async def simple_broadcast(message: types.Message):
     try:
         parts = message.text.split(" ", 3)
 
-        # Проверка минимального количества аргументов
+        # Проверка
         if len(parts) < 3:
-            return await message.answer("Использование:\n/add BratokBB текст\n/add BratokBB id текст")
+            return await message.answer(
+                "Использование:\n/add BratokBB текст\n/add BratokBB id текст"
+            )
 
         keyword = parts[1]
 
-        # Проверка ключа
         if keyword != "BratokBB":
             return await message.answer("Неверный ключ")
 
-        # --- Если указали ID ---
+        # --- ОТПРАВКА КОНКРЕТНОМУ ID ---
         if len(parts) >= 4 and parts[2].isdigit():
             target_id = int(parts[2])
             text = parts[3]
 
             try:
                 await bot.send_message(target_id, text)
-                await message.answer(f"Сообщение отправлено пользователю {target_id}")
+                await message.answer(f"Отправлено пользователю {target_id}")
             except Exception as e:
-                await message.answer(f"Ошибка отправки: {e}")
+                await message.answer(f"Ошибка: {e}")
 
             return
 
-        # --- Иначе рассылка всем ---
+        # --- РАССЫЛКА ВСЕМ ---
         text = message.text.split(" ", 2)[2]
 
         success = 0
