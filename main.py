@@ -60,7 +60,7 @@ def only_allowed(func):
                 "💰 Цены в USDT:\n"
                 "1 день: 1 USDT\n"
                 "7 дней: 3 USDT\n"
-                "1 месяц:7 USDT\n"
+                "1 месяц: 7 USDT\n"
                 "Навсегда: 10 USDT\n\n"
                 "Оплата через @CryptoBot\n\n"
                 "Удалено 32 едениц ресурса.\n"
